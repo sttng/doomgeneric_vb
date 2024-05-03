@@ -8,3 +8,7 @@
 .vs/
 Debug/
 Release/
+*.WAD
+*.wad
+*_wad.h
+*_wad.c

@@ -25,6 +25,10 @@
 
 #include "w_file.h"
 
+#include "z_zone.h"
+#include "doom1_wad.h"
+#include <string.h>
+
 extern wad_file_class_t stdc_wad_file;
 
 /*
@@ -37,8 +41,35 @@ extern wad_file_class_t win32_wad_file;
 extern wad_file_class_t posix_wad_file;
 #endif 
 
+
+extern wad_file_class_t rom_wad_file;
+wad_file_t *OpenRomFile(char *path)
+{
+    wad_file_t *result;
+    result = Z_Malloc(sizeof(wad_file_t), PU_STATIC, 0);
+    result->file_class = &rom_wad_file;
+    result->mapped = DOOM1_WAD;
+    result->length = sizeof(DOOM1_WAD);
+    return result;
+};
+
+void CloseRomFile(wad_file_t *file) {}
+
+size_t ReadRomFile(wad_file_t *file, unsigned int offset,
+                   void *buffer, size_t buffer_len) {
+  memcpy(buffer, &DOOM1_WAD[offset], buffer_len);
+  return buffer_len;
+}
+
+wad_file_class_t rom_wad_file = {
+  .OpenFile = OpenRomFile,
+  .CloseFile = CloseRomFile,
+  .Read = ReadRomFile,
+};
+
 static wad_file_class_t *wad_file_classes[] = 
 {
+#if 0
 /*
 #ifdef _WIN32
     &win32_wad_file,
@@ -48,11 +79,14 @@ static wad_file_class_t *wad_file_classes[] =
     &posix_wad_file,
 #endif
     &stdc_wad_file,
+#endif
 };
+
 
 wad_file_t *W_OpenFile(char *path)
 {
-    wad_file_t *result;
+    wad_file_t *result = OpenRomFile(path);
+#if 0
     int i;
 
     //!
@@ -78,6 +112,7 @@ wad_file_t *W_OpenFile(char *path)
             break;
         }
     }
+#endif
 
     return result;
 }

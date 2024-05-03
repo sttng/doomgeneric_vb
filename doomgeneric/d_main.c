@@ -1362,6 +1362,7 @@ void D_DoomMain (void)
     // Save configuration at exit.
     I_AtExit(M_SaveDefaults, false);
 
+#if 0
     // Find main IWAD file and load it.
     iwadfile = D_FindIWAD(IWAD_MASK_DOOM, &gamemission);
 
@@ -1372,6 +1373,9 @@ void D_DoomMain (void)
         I_Error("Game mode indeterminate.  No IWAD file was found.  Try\n"
                 "specifying one with the '-iwad' command line parameter.\n");
     }
+#else
+    iwadfile = "in_rom_wad.wad";
+#endif
 
     modifiedgame = false;
 

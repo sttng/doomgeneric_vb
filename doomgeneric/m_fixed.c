@@ -35,7 +35,24 @@ FixedMul
 ( fixed_t	a,
   fixed_t	b )
 {
+#ifdef __v810
+  int shift = FRACBITS;
+  asm(
+      // NOTE: This will fail if shift <= 0 but we do not check for that.
+      "mul %[a], %[b];"
+      "shr %[shift], %[b];"
+      "not %[shift], %[shift];"
+      "add 1, %[shift];"
+      "shl %[shift], r30;"
+      "or r30, %[b];"
+      : [b] "=r"(b), [shift] "=r"(shift) // Shift is clobbered.
+      // b and shift are used above, so declare them as inputs like this:
+      : "0"(b), "1"(shift), [a] "r"(a)
+      : "r30", "psw");
+  return b;
+#else  // __v810
     return ((int64_t) a * (int64_t) b) >> FRACBITS;
+#endif
 }
 
 
@@ -52,11 +69,15 @@ fixed_t FixedDiv(fixed_t a, fixed_t b)
     }
     else
     {
+#ifdef __v810
+      return ((a << 5) / (b >> 7)) << 4; // Looks good, but crashes eventually.
+#else
 	int64_t result;
 
 	result = ((int64_t) a << 16) / b;
 
 	return (fixed_t) result;
+#endif
     }
 }
 

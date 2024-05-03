@@ -30,6 +30,8 @@
 #define strcasecmp _stricmp
 #define strncasecmp _strnicmp
 
+#elif defined __v810
+//#error Not implemented
 #else
 
 #include <strings.h>
@@ -60,7 +62,7 @@
 // pre-standardisation version).  inttypes.h is also in the C99 
 // standard and defined to include stdint.h, so include this. 
 
-#include <inttypes.h>
+#include <stdint.h>
 
 #ifdef __cplusplus
 
