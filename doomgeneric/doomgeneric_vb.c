@@ -91,23 +91,25 @@ void DG_DrawFrame() {
     *scr = 0b10000100;
   }
 
-  // TODO: Need to draw both eyes (ideally with parallax),
-  // and need to select the correct FB based on VIP state.
-  volatile uint16_t *fb = (volatile uint16_t *)(0x00000000);
+  // TODO: Use parallax
+  // TODO: Use VIP state to select framebuffer
+  volatile uint16_t *fbl = (volatile uint16_t *)(0x00000000);
+  volatile uint16_t *fbr = (volatile uint16_t *)(0x00010000);
 
-  // TODO: Avoid multiplies, use accumulators.
   // TODO: Update I_FinishUpdate to directly output to
   // the VB FrameBuffer and skip double (triple?) buffering
   for (int x = 0; x < 384; x++) {
+    int y_off = 0;
     for (int octcol = 0; octcol < 28; ++octcol) {
-      uint16_t col = 0;
-      for (int cy = 0; cy < 8; cy++) {
+      uint16_t bits = 0;
+      for (int cy = 0; cy < 8; cy++, y_off += 384) {
         const int y = (octcol << 3) + cy;
-        const uint32_t px32 = DG_ScreenBuffer[y * 384 + x];
-        col >>= 2;
-        col |= (Dither(x, y, px32) << 14);
+        const uint32_t px32 = DG_ScreenBuffer[y_off + x];
+        bits >>= 2;
+        bits |= (Dither(x, y, px32) << 14);
       }
-      fb[x * 32 + octcol] = col;
+      const int fb_index = (x << 5) + octcol;
+      fbl[fb_index] = fbr[fb_index] = bits;
     }
   }
 }
@@ -216,9 +218,9 @@ void __attribute__((interrupt)) VbPlus_TimerInterrupt() {
   volatile uint16_t *thr = (volatile uint16_t *)(0x0200001c);
   volatile uint16_t *tcr = (volatile uint16_t *)(0x02000020);
 
-  // 100 100us ticks is 1ms
+  // 10 100us ticks is 1ms
   *thr = 0;
-  *tlr = 100;
+  *tlr = 10;
   *tcr = 0b1111;
 }
 
