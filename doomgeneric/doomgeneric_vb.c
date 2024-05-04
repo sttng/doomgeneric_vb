@@ -3,6 +3,7 @@
 
 #include "doomgeneric.h"
 #include "doomkeys.h"
+#include "i_video.h"
 
 volatile uint32_t vb_ms;
 
@@ -19,9 +20,17 @@ static const int DITHER_MATRIX[8][8] = {
     {10 * 3, 58 * 3, 6 * 3, 54 * 3, 9 * 3, 57 * 3, 5 * 3, 53 * 3},
     {42 * 3, 26 * 3, 38 * 3, 22 * 3, 41 * 3, 25 * 3, 37 * 3, 21 * 3}};
 
-int Dither(int x, int y, uint32_t in) {
-  const int sum = ((in >> 24) & 0xFF) + ((in >> 16) & 0xFF) +
-                  ((in >> 8) & 0xFF) + DITHER_MATRIX[x & 7][y & 7];
+int Dither(int x, int y, struct color c) {
+#if 0
+  int r = (uint16_t)(c.r >> (8 - s_Fb.red.length));
+  int g = (uint16_t)(c.g >> (8 - s_Fb.green.length));
+  int b = (uint16_t)(c.b >> (8 - s_Fb.blue.length));
+#else
+  int r = (uint16_t)(c.r);
+  int g = (uint16_t)(c.g);
+  int b = (uint16_t)(c.b);
+#endif
+  const int sum = r + g + b + DITHER_MATRIX[x & 7][y & 7];
 
   // Little trick to divide by 3 by multiplying by its fixed-point reciprocal.
   int final_val = (sum * 0x5555) >> (6 + 16);
@@ -80,6 +89,7 @@ enum vb_btn_t {
 };
 
 uint16_t buttons_down;
+extern uint8_t *I_VideoBuffer;
 
 void DG_DrawFrame() {
   _Static_assert(sizeof(pixel_t) == sizeof(uint32_t));
@@ -98,15 +108,18 @@ void DG_DrawFrame() {
 
   // TODO: Update I_FinishUpdate to directly output to
   // the VB FrameBuffer and skip double (triple?) buffering
-  for (int x = 0; x < 384; x++) {
+  for (int x = 32; x < 352; x++) {
     int y_off = 0;
-    for (int octcol = 0; octcol < 28; ++octcol) {
+    for (int octcol = 1; octcol < 26; ++octcol) {
       uint16_t bits = 0;
-      for (int cy = 0; cy < 8; cy++, y_off += 384) {
+      for (int cy = 0; cy < 8; cy++, y_off += 320) {
         const int y = (octcol << 3) + cy;
-        const uint32_t px32 = DG_ScreenBuffer[y_off + x];
+        const uint8_t pal_idx = I_VideoBuffer[y_off + x - 32];
+        const struct color px32 = colors[pal_idx];
         bits >>= 2;
         bits |= (Dither(x, y, px32) << 14);
+        //bits |= (pal_idx & 0b11) << 14; // Show something discernable
+        //bits |= (px32.b & 0b11) << 14;
       }
       const int fb_index = (x << 5) + octcol;
       fbl[fb_index] = fbr[fb_index] = bits;
