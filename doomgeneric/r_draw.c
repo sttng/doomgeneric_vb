@@ -36,6 +36,9 @@
 // State.
 #include "doomstat.h"
 
+// Dither
+#include "vb_utils.h"
+
 
 // ?
 #define MAXWIDTH			1120
@@ -92,6 +95,110 @@ byte*			dc_source;
 // just for profiling 
 int			dccount;
 
+// VB-optimized R_DrawColumn that exploits that a single halfword
+// of VB framebuffer contains 8 pixels.
+void R_DrawColumnVB (void) 
+{
+    int			count; 
+    fixed_t		frac;
+    fixed_t		fracstep;	 
+    count = dc_yh - dc_yl; 
+
+    // TODO: Vary based on VIP state and perspective.
+    //uint16_t* fb = (uint16_t*)0x00008000;
+    uint16_t* fb = (uint16_t*)0x00000000;
+
+    // Zero length, column does not exceed a pixel.
+    if (count < 0)  {
+      return; 
+    }
+
+    // Framebuffer destination address.
+    // Use ylookup LUT to avoid multiply with ScreenWidth.
+    // Use columnofs LUT for subwindows? 
+    //dest = ylookup[dc_yl] + columnofs[dc_x];  
+    int fb_strip_index = ((dc_x+32) << 5) + ((dc_yl+8) >> 3);
+    int strip_px_index = dc_yl & 7;
+    uint16_t strip = 0;
+    uint16_t blend_mask = 0;//(1 << (strip_px_index << 1)) - 1; // Applied to existing pixels.
+
+    //blend_mask |= count >= 8 ? 0 : ~((1 << ((count) << 1)) - 1);
+#if 0
+    if ((count - strip_px_index) <= 8) {
+      blend_mask |= ~((1 << ((strip_px_index-count) << 1)) - 1);
+    }
+#endif
+
+#if 0
+      strip_px_index 
+      ? fb[fb_strip_index] << strip_px_index // Need to load partial value from VRAM
+      : 0; // No need (TODO: unless it's the last strip).
+#endif
+
+
+    // Determine scaling,
+    //  which is the only mapping to be done.
+    fracstep = dc_iscale; 
+    frac = dc_texturemid + (dc_yl-centery)*fracstep; 
+
+    // Inner loop that does the actual texture mapping,
+    // e.g. a DDA-lile scaling.
+    // This is as fast as it gets.
+    do {
+      const int src_i = (frac>>FRACBITS)&127;
+
+      const int pal_idx = dc_colormap[dc_source[src_i]];
+      const byte lum = luminance[pal_idx];
+      const int two_bit = Dither(dc_x, -dc_yl + count - 7, lum);
+
+      strip >>= 2;
+      strip |= two_bit << 14;
+
+      // TODO: There should be a way to compute this without shifting each loop.
+      blend_mask >>= 2;
+      blend_mask |= (0b11 << 14);
+
+      ++strip_px_index;
+      if (!(strip_px_index & 0b111)) {
+        if (blend_mask != 0xFFFF) {
+          strip = (strip & blend_mask) | fb[fb_strip_index];
+        }
+        // Commit the previous halfword to VRAM
+        fb[fb_strip_index++] = strip;
+
+        // Only load the current strip if not overwriting the entire thing.
+        // Remember, VRAM reads are expensive AF on VB.
+        // (Verified to be correct)
+        // TODO: Shouldn't be necessary.
+        strip = 0;
+        blend_mask = 0;
+        strip_px_index = 0;
+        //blend_mask = count >= 8 ? 0 : ~((1 << ((count) << 1)) - 1);
+        //blend_mask = count >= 8 ? 0 : ((1 << (7 - count) << 1) - 1);
+        //blend_mask = 0;
+      }
+      
+      frac += fracstep;
+    } while (count--); 
+
+#if 1
+    //if (strip_px_index) {
+      // Final commit
+      strip >>= ((8 - strip_px_index) << 1);
+      blend_mask >>= ((8 - strip_px_index) << 1);
+
+      if (blend_mask != 0xFFFF) {
+          strip = (strip & blend_mask) | fb[fb_strip_index];
+        //strip = strip | (blend_mask & fb[fb_strip_index]);
+        //strip = (strip & blend_mask) | fb[fb_strip_index];
+        //strip = fb[fb_strip_index];
+      }
+      // Commit the previous halfword to VRAM
+      fb[fb_strip_index] = strip;
+    //}
+#endif
+}
+
 //
 // A column is a vertical slice/span from a wall texture that,
 //  given the DOOM style restrictions on the view orientation,
@@ -101,6 +208,8 @@ int			dccount;
 // 
 void R_DrawColumn (void) 
 { 
+  R_DrawColumnVB();
+  return;
     int			count; 
     byte*		dest; 
     fixed_t		frac;
@@ -142,6 +251,7 @@ void R_DrawColumn (void)
 	frac += fracstep;
 	
     } while (count--); 
+
 } 
 
 

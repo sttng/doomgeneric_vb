@@ -172,5 +172,6 @@ extern boolean palette_changed;
 #endif  // CMAP256
 
 extern struct color colors[256];
+extern byte luminance[256];
 
 #endif

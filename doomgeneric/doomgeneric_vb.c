@@ -20,7 +20,7 @@ static const int DITHER_MATRIX[8][8] = {
     {10 * 3, 58 * 3, 6 * 3, 54 * 3, 9 * 3, 57 * 3, 5 * 3, 53 * 3},
     {42 * 3, 26 * 3, 38 * 3, 22 * 3, 41 * 3, 25 * 3, 37 * 3, 21 * 3}};
 
-int Dither(int x, int y, struct color c) {
+int Dither24(int x, int y, struct color c) {
 #if 0
   int r = (uint16_t)(c.r >> (8 - s_Fb.red.length));
   int g = (uint16_t)(c.g >> (8 - s_Fb.green.length));
@@ -92,8 +92,6 @@ uint16_t buttons_down;
 extern uint8_t *I_VideoBuffer;
 
 void DG_DrawFrame() {
-  _Static_assert(sizeof(pixel_t) == sizeof(uint32_t));
-
   if (!(*scr & 0b10)) {
     // Copy current button state.
     buttons_down = *sdlr | (*sdhr << 8);
@@ -106,6 +104,7 @@ void DG_DrawFrame() {
   volatile uint16_t *fbl = (volatile uint16_t *)(0x00000000);
   volatile uint16_t *fbr = (volatile uint16_t *)(0x00010000);
 
+#if 0
   // TODO: Update I_FinishUpdate to directly output to
   // the VB FrameBuffer and skip double (triple?) buffering
   for (int x = 32; x < 352; x++) {
@@ -117,7 +116,7 @@ void DG_DrawFrame() {
         const uint8_t pal_idx = I_VideoBuffer[y_off + x - 32];
         const struct color px32 = colors[pal_idx];
         bits >>= 2;
-        bits |= (Dither(x, y, px32) << 14);
+        bits |= (Dither24(x, y, px32) << 14);
         //bits |= (pal_idx & 0b11) << 14; // Show something discernable
         //bits |= (px32.b & 0b11) << 14;
       }
@@ -125,6 +124,17 @@ void DG_DrawFrame() {
       fbl[fb_index] = fbr[fb_index] = bits;
     }
   }
+#else
+#if 0
+  // Clear it.
+  for (int x = 32; x < 352; x++) {
+    for (int octcol = 1; octcol < 26; ++octcol) {
+      const int fb_index = (x << 5) + octcol;
+      fbl[fb_index] = fbr[fb_index] = 0;
+    }
+  }
+#endif
+#endif
 }
 
 void DG_SleepMs(uint32_t ms) {
@@ -218,9 +228,18 @@ int mkdir(const char *pathname, mode_t mode) {
   return 0;
 }
 
-void putc(int) {}
+void putc(int c) {}
 
 void puts(char *s) {}
+
+#ifdef __GNUC__
+// Hopefully never called...
+int __muldi3(int a, int b) {
+  for(;;)
+    ;
+  
+}
+#endif
 
 int __call_exitprocs() { return 0; }
 void __attribute__((interrupt)) VbPlus_VipInterrupt() {}

@@ -50,7 +50,7 @@ FixedMul
       : "0"(b), "1"(shift), [a] "r"(a)
       : "r30", "psw");
   return b;
-#else  // __v810
+#else  // __v8102
     return ((int64_t) a * (int64_t) b) >> FRACBITS;
 #endif
 }
@@ -69,8 +69,8 @@ fixed_t FixedDiv(fixed_t a, fixed_t b)
     }
     else
     {
-#ifdef __v810
-      return ((a << 5) / (b >> 7)) << 4; // Looks good, but crashes eventually.
+#if defined(__v810) && 0
+      return ((a << 5) / (b >> 7)) << 4; // Looks OK, but crashes eventually.
 #else
 	int64_t result;
 

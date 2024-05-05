@@ -84,6 +84,8 @@ boolean palette_changed;
 
 struct color colors[256];
 
+byte luminance[256];
+
 #endif  // CMAP256
 
 
@@ -304,9 +306,14 @@ void I_SetPalette (byte* palette)
 
     for (i=0; i<256; ++i ) {
         colors[i].a = 0;
-        colors[i].r = gammatable[usegamma][*palette++];
-        colors[i].g = gammatable[usegamma][*palette++];
-        colors[i].b = gammatable[usegamma][*palette++];
+        int r = colors[i].r = gammatable[usegamma][*palette++];
+        int g = colors[i].g = gammatable[usegamma][*palette++];
+        int b = colors[i].b = gammatable[usegamma][*palette++];
+        
+        // Comput luminance for VB
+        const int sum = r + g + b;
+        const int final_val = (sum * 0x5555) >> 16;
+        luminance[i] = final_val;
     }
 
 #ifdef CMAP256
