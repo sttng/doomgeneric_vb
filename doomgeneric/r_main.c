@@ -820,20 +820,22 @@ R_PointInSubsector
 //
 // R_SetupFrame
 //
-void R_SetupFrame (player_t* player)
+void R_SetupFrame (player_t* player, fixed_t eye_off, angle_t angle_off)
 {		
     int		i;
     
     viewplayer = player;
-    viewx = player->mo->x;
-    viewy = player->mo->y;
-    viewangle = player->mo->angle + viewangleoffset;
+
+    viewangle = player->mo->angle + viewangleoffset + angle_off;
     extralight = player->extralight;
 
     viewz = player->viewz;
     
     viewsin = finesine[viewangle>>ANGLETOFINESHIFT];
     viewcos = finecosine[viewangle>>ANGLETOFINESHIFT];
+
+    viewx = player->mo->x + FixedMul(eye_off, viewsin);
+    viewy = player->mo->y - FixedMul(eye_off, viewcos);
 	
     sscount = 0;
 	
@@ -860,9 +862,10 @@ void R_SetupFrame (player_t* player)
 //
 // R_RenderView
 //
-void R_RenderPlayerView (player_t* player)
+void R_RenderPlayerView (player_t *player, fixed_t eye_off, angle_t angle_off, uint16_t* fb)
 {	
-    R_SetupFrame (player);
+    R_SetupFrame (player, eye_off, angle_off);
+    vb_fb = fb;
 
     // Clear buffers.
     R_ClearClipSegs ();

@@ -166,7 +166,7 @@ extern  boolean setsizeneeded;
 extern  int             showMessages;
 void R_ExecuteSetViewSize (void);
 
-void D_Display (void)
+void D_Display (uint16_t* left_fb, uint16_t* right_fb)
 {
     static  boolean		viewactivestate = false;
     static  boolean		menuactivestate = false;
@@ -240,8 +240,10 @@ void D_Display (void)
     I_UpdateNoBlit ();
     
     // draw the view directly
-    if (gamestate == GS_LEVEL && !automapactive && gametic)
-    	R_RenderPlayerView (&players[displayplayer]);
+    if (gamestate == GS_LEVEL && !automapactive && gametic) {
+    	R_RenderPlayerView (&players[displayplayer], -(1 << 18), -0x02000000, left_fb);
+    	R_RenderPlayerView (&players[displayplayer], (1 << 18), 0x02000000, right_fb);
+    }
 
     if (gamestate == GS_LEVEL && gametic)
     	HU_Drawer ();
@@ -402,7 +404,7 @@ boolean D_GrabMouseCallback(void)
     return (gamestate == GS_LEVEL) && !demoplayback && !advancedemo;
 }
 
-void doomgeneric_Tick()
+void doomgeneric_Tick(uint16_t* left_fb, uint16_t* right_fb)
 {
     // frame syncronous IO operations
     I_StartFrame ();
@@ -414,7 +416,7 @@ void doomgeneric_Tick()
     // Update display, next frame, with current state.
     if (screenvisible)
     {
-        D_Display ();
+        D_Display (left_fb, right_fb);
     }
 }
 
@@ -455,7 +457,7 @@ void D_DoomLoop (void)
         wipegamestate = gamestate;
     }
 
-    doomgeneric_Tick();
+    //doomgeneric_Tick();
 }
 
 

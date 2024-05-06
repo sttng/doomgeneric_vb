@@ -216,9 +216,19 @@ int main() {
   };
   doomgeneric_Create(4, argv);
 
+#ifdef VB_DOUBLE_BUFFER
+  uint16_t left[384*256/4];
+  uint16_t right[384*256/4];
   for (;;) {
-    doomgeneric_Tick();
+    doomgeneric_Tick(left, right);
+    memcpy(0, left, sizeof(left));
+    memcpy(0x10000, right, sizeof(right));
   }
+#else
+  for (;;) {
+    doomgeneric_Tick((uint16_t*)0, (uint16_t*)0x10000);
+  }
+#endif
 
   return 0;
 }

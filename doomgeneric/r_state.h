@@ -101,6 +101,9 @@ extern fixed_t		viewz;
 extern angle_t		viewangle;
 extern player_t*	viewplayer;
 
+// VB framebuffer to write to
+extern uint16_t* vb_fb;
+
 
 // ?
 extern angle_t		clipangle;

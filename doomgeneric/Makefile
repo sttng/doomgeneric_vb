@@ -40,7 +40,7 @@ CFLAGS	:=	-Wall -Wno-sign-compare -g -O3 -ffast-math -fno-builtin \
 	-DFIXED_REALS \
 	-DNO_IOSTREAM \
 	-DHWINFO_DEBUG \
-	-DVBPLUS_USE_SCHEDULER \
+	-DVB_DOUBLE_BUFFER \
   -DDOOMGENERIC_RESX=384 -DDOOMGENERIC_RESY=224
 
 LDFLAGS:=	-Tvb.ld -g -nostartfiles -specs=nosys.specs -lnosys -nostartfiles -fno-builtin

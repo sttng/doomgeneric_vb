@@ -149,7 +149,7 @@ R_AddPointToBox
 //
 
 // Called by G_Drawer.
-void R_RenderPlayerView (player_t *player);
+void R_RenderPlayerView (player_t *player, fixed_t eye_off, angle_t angle_off, uint16_t* vb_fb);
 
 // Called by startup code.
 void R_Init (void);

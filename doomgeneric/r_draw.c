@@ -77,6 +77,8 @@ byte		translations[3][256];
 
 static byte *background_buffer = NULL;
 
+uint16_t* vb_fb;
+
 
 //
 // R_DrawColumn
@@ -104,9 +106,6 @@ void R_DrawColumnVB (void)
     fixed_t		frac;
     fixed_t		fracstep;	 
     count = dc_yh - dc_yl; 
-
-    // TODO: Vary based on VIP state and perspective.
-    uint16_t* fb = (uint16_t*)0x00000000;
 
     // Zero length, column does not exceed a pixel.
     if (count < 0)  {
@@ -161,21 +160,13 @@ void R_DrawColumnVB (void)
       ++strip_px_index;
       if (!(strip_px_index & 0b111)) {
         if (blend_mask != 0xFFFF) {
-          strip = (strip & blend_mask) | fb[fb_strip_index];
+          strip = (strip & blend_mask) | vb_fb[fb_strip_index];
         }
         // Commit the previous halfword to VRAM
-        fb[fb_strip_index++] = strip;
+        vb_fb[fb_strip_index++] = strip;
 
-        // Only load the current strip if not overwriting the entire thing.
-        // Remember, VRAM reads are expensive AF on VB.
-        // (Verified to be correct)
-        // TODO: Shouldn't be necessary.
-        strip = 0;
         blend_mask = 0;
         strip_px_index = 0;
-        //blend_mask = count >= 8 ? 0 : ~((1 << ((count) << 1)) - 1);
-        //blend_mask = count >= 8 ? 0 : ((1 << (7 - count) << 1) - 1);
-        //blend_mask = 0;
       }
       
       frac += fracstep;
@@ -188,13 +179,10 @@ void R_DrawColumnVB (void)
       blend_mask >>= ((8 - strip_px_index) << 1);
 
       if (blend_mask != 0xFFFF) {
-          strip = (strip & blend_mask) | fb[fb_strip_index];
-        //strip = strip | (blend_mask & fb[fb_strip_index]);
-        //strip = (strip & blend_mask) | fb[fb_strip_index];
-        //strip = fb[fb_strip_index];
+          strip = (strip & blend_mask) | vb_fb[fb_strip_index];
       }
       // Commit the previous halfword to VRAM
-      fb[fb_strip_index] = strip;
+      vb_fb[fb_strip_index] = strip;
     //}
 #endif
 }
@@ -717,9 +705,6 @@ void R_DrawSpanVB (void)
 //	dscount++;
 #endif
     
-    // TODO: Vary based on VIP state and perspective.
-    uint16_t* fb = (uint16_t*)0x00000000;
-
     // Pack position and step variables into a single 32-bit integer,
     // with x in the top 16 bits and y in the bottom 16 bits.  For
     // each 16-bit part, the top 6 bits are the integer part and the
@@ -741,7 +726,7 @@ void R_DrawSpanVB (void)
     do
     {
         // ordering is unintuitive to keep bus contention low.
-        uint16_t strip = fb[fb_strip_index];
+        uint16_t strip = vb_fb[fb_strip_index];
         ytemp = (position >> 4) & 0x0fc0;
         xtemp = (position >> 26);
         spot = xtemp | ytemp;
@@ -751,7 +736,7 @@ void R_DrawSpanVB (void)
         const int two_bit = Dither(dc_x + count, ds_y, lum);
         strip &= ~mask;
         strip |= two_bit << (strip_px_index << 1);;
-        fb[fb_strip_index] = strip;
+        vb_fb[fb_strip_index] = strip;
 
         position += step;
         fb_strip_index += 32;

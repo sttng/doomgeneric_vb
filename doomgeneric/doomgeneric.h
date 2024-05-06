@@ -25,7 +25,7 @@ typedef uint32_t pixel_t;
 
 
 void doomgeneric_Create(int argc, char **argv);
-void doomgeneric_Tick();
+void doomgeneric_Tick(uint16_t* left_fb, uint16_t* right_fb);
 
 
 //Implement below functions for your platform
