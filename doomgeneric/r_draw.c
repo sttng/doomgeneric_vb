@@ -97,6 +97,7 @@ int			dccount;
 
 // VB-optimized R_DrawColumn that exploits that a single halfword
 // of VB framebuffer contains 8 pixels.
+// Draws directly to the VB framebuffer.
 void R_DrawColumnVB (void) 
 {
     int			count; 
@@ -105,7 +106,6 @@ void R_DrawColumnVB (void)
     count = dc_yh - dc_yl; 
 
     // TODO: Vary based on VIP state and perspective.
-    //uint16_t* fb = (uint16_t*)0x00008000;
     uint16_t* fb = (uint16_t*)0x00000000;
 
     // Zero length, column does not exceed a pixel.
@@ -696,9 +696,75 @@ int			dscount;
 
 
 //
+// Draws the actual span directly to the VB framebuffer.
+void R_DrawSpanVB (void) 
+{ 
+    unsigned int position, step;
+    byte *dest;
+    int count;
+    int spot;
+    unsigned int xtemp, ytemp;
+
+#ifdef RANGECHECK
+    if (ds_x2 < ds_x1
+	|| ds_x1<0
+	|| ds_x2>=SCREENWIDTH
+	|| (unsigned)ds_y>SCREENHEIGHT)
+    {
+	I_Error( "R_DrawSpan: %i to %i at %i",
+		 ds_x1,ds_x2,ds_y);
+    }
+//	dscount++;
+#endif
+    
+    // TODO: Vary based on VIP state and perspective.
+    uint16_t* fb = (uint16_t*)0x00000000;
+
+    // Pack position and step variables into a single 32-bit integer,
+    // with x in the top 16 bits and y in the bottom 16 bits.  For
+    // each 16-bit part, the top 6 bits are the integer part and the
+    // bottom 10 bits are the fractional part of the pixel position.
+
+    position = ((ds_xfrac << 10) & 0xffff0000)
+             | ((ds_yfrac >> 6)  & 0x0000ffff);
+    step = ((ds_xstep << 10) & 0xffff0000)
+         | ((ds_ystep >> 6)  & 0x0000ffff);
+
+
+    int fb_strip_index = ((ds_x1+32) << 5) + ((ds_y+8) >> 3);
+    const int strip_px_index = ds_y & 7;
+    const uint16_t mask = (0b11 << (strip_px_index << 1));
+
+    // We do not check for zero spans here?
+    count = ds_x2 - ds_x1;
+
+    do
+    {
+        // ordering is unintuitive to keep bus contention low.
+        uint16_t strip = fb[fb_strip_index];
+        ytemp = (position >> 4) & 0x0fc0;
+        xtemp = (position >> 26);
+        spot = xtemp | ytemp;
+
+        const int pal_idx = ds_colormap[ds_source[spot]];
+        const byte lum = luminance[pal_idx];
+        const int two_bit = Dither(dc_x + count, ds_y, lum);
+        strip &= ~mask;
+        strip |= two_bit << (strip_px_index << 1);;
+        fb[fb_strip_index] = strip;
+
+        position += step;
+        fb_strip_index += 32;
+
+    } while (count--);
+}
+
+//
 // Draws the actual span.
 void R_DrawSpan (void) 
 { 
+  R_DrawSpanVB();
+  return;
     unsigned int position, step;
     byte *dest;
     int count;
