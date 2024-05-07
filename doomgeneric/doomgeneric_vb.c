@@ -188,13 +188,13 @@ int main() {
   doomgeneric_Create(4, argv);
 
 #ifdef VB_OVERDRIVE
-  uint16_t both[2 * (384 * 224 / 4)];
+  uint16_t both[(384 * 224 / 4)];
   if (sizeof(both) != 43008) {
-    fprintf("Unexpected size of frame buffer. Wanted %d, got %d", 43008, sizeof(both));
+    fprintf(stderr, "Unexpected size of frame buffer. Wanted %d, got %d", 43008, sizeof(both));
     abort();
   }
   for (;;) {
-    doomgeneric_Tick(both, &both[sizeof(both)/4]);
+    doomgeneric_Tick(both, &both[384*224/8]);
     write(vb_fd, both, sizeof(both));
   }
 #else // !VB_OVERDRIVE

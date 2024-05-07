@@ -115,8 +115,11 @@ void R_DrawColumnVB (void)
     // Framebuffer destination address.
     // Use ylookup LUT to avoid multiply with ScreenWidth.
     // Use columnofs LUT for subwindows? 
-    //dest = ylookup[dc_yl] + columnofs[dc_x];  
+#ifdef VB_OVERDRIVE
+    int fb_strip_index = ((dc_x+32) * 28) + ((dc_yl+8) >> 3);
+#else
     int fb_strip_index = ((dc_x+32) << 5) + ((dc_yl+8) >> 3);
+#endif
     int strip_px_index = dc_yl & 7;
     uint16_t strip = 0;
     uint16_t blend_mask = 0;//(1 << (strip_px_index << 1)) - 1; // Applied to existing pixels.
@@ -716,7 +719,11 @@ void R_DrawSpanVB (void)
          | ((ds_ystep >> 6)  & 0x0000ffff);
 
 
+#ifdef VB_OVERDRIVE
+    int fb_strip_index = ((ds_x1+32) * 28) + ((ds_y+8) >> 3);
+#else
     int fb_strip_index = ((ds_x1+32) << 5) + ((ds_y+8) >> 3);
+#endif
     const int strip_px_index = ds_y & 7;
     const uint16_t mask = (0b11 << (strip_px_index << 1));
 
@@ -739,7 +746,11 @@ void R_DrawSpanVB (void)
         vb_fb[fb_strip_index] = strip;
 
         position += step;
+#ifdef VB_OVERDRIVE
+        fb_strip_index += 28;
+#else
         fb_strip_index += 32;
+#endif
 
     } while (count--);
 }
