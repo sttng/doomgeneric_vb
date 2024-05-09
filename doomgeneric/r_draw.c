@@ -121,73 +121,42 @@ void R_DrawColumnVB (void)
     int fb_strip_index = ((dc_x+32) << 5) + ((dc_yl+8) >> 3);
 #endif
     int strip_px_index = dc_yl & 7;
-    uint16_t strip = 0;
-    uint16_t blend_mask = 0;//(1 << (strip_px_index << 1)) - 1; // Applied to existing pixels.
+    uint16_t strip = vb_fb[fb_strip_index];
 
-    //blend_mask |= count >= 8 ? 0 : ~((1 << ((count) << 1)) - 1);
-#if 0
-    if ((count - strip_px_index) <= 8) {
-      blend_mask |= ~((1 << ((strip_px_index-count) << 1)) - 1);
-    }
-#endif
-
-#if 0
-      strip_px_index 
-      ? fb[fb_strip_index] << strip_px_index // Need to load partial value from VRAM
-      : 0; // No need (TODO: unless it's the last strip).
-#endif
-
-
-    // Determine scaling,
-    //  which is the only mapping to be done.
     fracstep = dc_iscale; 
     frac = dc_texturemid + (dc_yl-centery)*fracstep; 
 
-    // Inner loop that does the actual texture mapping,
-    // e.g. a DDA-lile scaling.
-    // This is as fast as it gets.
     do {
       const int src_i = (frac>>FRACBITS)&127;
 
+      const int shift = strip_px_index << 1;
+      const int mask = ~(0b11 << shift);
       const int pal_idx = dc_colormap[dc_source[src_i]];
       const byte lum = luminance[pal_idx];
       const int two_bit = Dither(dc_x, -dc_yl + count - 7, lum);
 
-      strip >>= 2;
-      strip |= two_bit << 14;
-
-      // TODO: There should be a way to compute this without shifting each loop.
-      blend_mask >>= 2;
-      blend_mask |= (0b11 << 14);
+      strip &= mask;
+      strip |= two_bit << shift;
 
       ++strip_px_index;
       if (!(strip_px_index & 0b111)) {
-        if (blend_mask != 0xFFFF) {
-          strip = (strip & blend_mask) | vb_fb[fb_strip_index];
-        }
         // Commit the previous halfword to VRAM
         vb_fb[fb_strip_index++] = strip;
 
-        blend_mask = 0;
+        // Skip expensive VRAM load (400ns!) if we are just
+        // going to replace all pixels (or draw no more).
+        strip = count > 0 && count < 8 ? vb_fb[fb_strip_index] : 0;
         strip_px_index = 0;
       }
       
       frac += fracstep;
     } while (count--); 
 
-#if 1
-    //if (strip_px_index) {
-      // Final commit
-      strip >>= ((8 - strip_px_index) << 1);
-      blend_mask >>= ((8 - strip_px_index) << 1);
-
-      if (blend_mask != 0xFFFF) {
-          strip = (strip & blend_mask) | vb_fb[fb_strip_index];
-      }
-      // Commit the previous halfword to VRAM
+    // Only copy the strip if we iterated.
+    if (strip_px_index) {
+      // Final commit.
       vb_fb[fb_strip_index] = strip;
-    //}
-#endif
+    }
 }
 
 //
