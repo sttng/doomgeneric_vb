@@ -128,13 +128,20 @@ unsigned char DoomKeyFor(enum vb_btn_t btn) {
     return KEY_USE;
   case VB_BTN_B:
     return KEY_FIRE;
-  case VB_BTN_RT:
-    return KEY_FIRE;
-  case VB_BTN_LT:
-    return KEY_USE;
   case VB_BTN_RU:
     return NO_OP;
-    break;
+  case VB_BTN_STA:
+    return KEY_ENTER;
+  case VB_BTN_SEL:
+    return KEY_ESCAPE;
+  case VB_BTN_RD:
+    return NO_OP;
+
+#if 0 // Shoulder strafe
+  case VB_BTN_RT:
+    return KEY_STRAFE_R;
+  case VB_BTN_LT:
+    return KEY_STRAFE_L;
   case VB_BTN_RR:
     return KEY_STRAFE_R;
   case VB_BTN_LR:
@@ -145,14 +152,26 @@ unsigned char DoomKeyFor(enum vb_btn_t btn) {
     return KEY_DOWNARROW;
   case VB_BTN_LU:
     return KEY_UPARROW;
-  case VB_BTN_STA:
-    return KEY_ENTER;
-  case VB_BTN_SEL:
-    return KEY_ESCAPE;
   case VB_BTN_RL:
     return KEY_STRAFE_L;
-  case VB_BTN_RD:
-    return NO_OP;
+#else // Halo
+  case VB_BTN_RT:
+    return KEY_FIRE;
+  case VB_BTN_LT:
+    return KEY_USE;
+  case VB_BTN_LR:
+    return KEY_STRAFE_R;
+  case VB_BTN_RR:
+    return KEY_RIGHTARROW;
+  case VB_BTN_RL:
+    return KEY_LEFTARROW;
+  case VB_BTN_LD:
+    return KEY_DOWNARROW;
+  case VB_BTN_LU:
+    return KEY_UPARROW;
+  case VB_BTN_LL:
+    return KEY_STRAFE_L;
+#endif
   }
 }
 
