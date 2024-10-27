@@ -132,4 +132,3 @@ $(OBJDIR)/%.o:	%.s
 
 print:
 	@echo OBJS: $(OBJS)
-

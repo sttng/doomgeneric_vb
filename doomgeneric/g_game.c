@@ -2247,23 +2247,23 @@ void G_TimeDemo (char* name)
  
 boolean G_CheckDemoStatus (void) 
 { 
-    int             endtime; 
+    //int             endtime; 
 	 
     if (timingdemo) 
     { 
-        float fps;
-        int realtics;
+        //float fps;
+        //int realtics;
 
-	endtime = I_GetTime (); 
-        realtics = endtime - starttime;
-        fps = ((float) gametic * TICRATE) / realtics;
+	//endtime = I_GetTime (); 
+        //realtics = endtime - starttime;
+        //fps = ((float) gametic * TICRATE) / realtics;
 
         // Prevent recursive calls
         timingdemo = false;
         demoplayback = false;
 
-	I_Error ("timed %i gametics in %i realtics (%f fps)",
-                 gametic, realtics, fps);
+	//I_Error ("timed %i gametics in %i realtics (%f fps)",
+    //             gametic, realtics, fps);
     } 
 	 
     if (demoplayback) 

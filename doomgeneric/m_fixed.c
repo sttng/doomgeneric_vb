@@ -69,15 +69,15 @@ fixed_t FixedDiv(fixed_t a, fixed_t b)
     }
     else
     {
-#if defined(__v810) && 0
+//#if defined(__v810) && 0
       return ((a << 5) / (b >> 7)) << 4; // Looks OK, but crashes eventually.
-#else
-	int64_t result;
+//#else
+	/*int64_t result;
 
 	result = ((int64_t) a << 16) / b;
 
-	return (fixed_t) result;
-#endif
+	return (fixed_t) result;*/
+//#endif
     }
 }
 

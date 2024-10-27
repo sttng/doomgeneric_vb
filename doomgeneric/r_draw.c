@@ -660,7 +660,7 @@ int			dscount;
 void R_DrawSpanVB (void) 
 { 
     unsigned int position, step;
-    byte *dest;
+    //byte *dest;
     int count;
     int spot;
     unsigned int xtemp, ytemp;

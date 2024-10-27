@@ -67,20 +67,7 @@ wad_file_class_t rom_wad_file = {
   .Read = ReadRomFile,
 };
 
-static wad_file_class_t *wad_file_classes[] = 
-{
-#if 0
-/*
-#ifdef _WIN32
-    &win32_wad_file,
-#endif
-*/
-#ifdef HAVE_MMAP
-    &posix_wad_file,
-#endif
-    &stdc_wad_file,
-#endif
-};
+
 
 
 wad_file_t *W_OpenFile(char *path)
