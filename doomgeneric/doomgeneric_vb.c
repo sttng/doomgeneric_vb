@@ -10,7 +10,7 @@
 #ifdef VB_OVERDRIVE
 #include <sys/time.h>
 #include <stdio.h>
-#include <fcntl.h
+#include <fcntl.h>
 
 
 int vb_fd;
