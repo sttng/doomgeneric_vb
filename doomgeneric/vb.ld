@@ -56,7 +56,7 @@ SECTIONS
         *(.bss*)
         *(COMMON)
       PROVIDE (__bss_end__ = .);
-      end = ABSOLUTE(.); /* Heap start */
+      _end = ABSOLUTE(.); /* Heap start */
     } >wram = 0
 
     end_size = 0x21F;

@@ -44,7 +44,6 @@ CFLAGS	:=	-Wall -Wno-sign-compare -g -O3 -ffast-math -fno-builtin \
 	-fno-unroll-loops \
 	-fomit-frame-pointer \
 	-fstrict-aliasing \
-	-isystem $(HOME)/gits/v810-gcc-newlib-for-llvm/v810-gcc/v810/include \
 	-Werror=return-type \
 	-D__VALIST=char* \
 	-DFIXED_REALS \
@@ -63,7 +62,6 @@ LIBDIRS := $(HOME)/gits/v810-gcc-newlib-for-llvm/v810-gcc/v810
 else
 LIBS += -lgcc
 LIBDIRS	:=	$(HOME)/bin/v810-gcc/v810
-CFLAGS += -fno-leading-underscore
 endif
 
 export LIBPATHS	:=	$(foreach dir,$(LIBDIRS),-L$(dir)/lib)
@@ -93,8 +91,7 @@ clean:
 	rm -rf $(OBJDIR)
 	rm -f $(OUTPUT).vb
 	rm -f $(OUTPUT).elf
-	rm -f doom1_wad.h
-	rm -f doom1_wad.c
+
 
 $(OUTPUT).vb	:	$(OUTPUT).elf
 	$(OBJCOPY) -O binary $(OUTPUT).elf $(OUTPUT).vb
@@ -106,15 +103,10 @@ $(OUTPUT).elf	:	$(OBJS)
 	-o $(OUTPUT).elf  -fdata-sections -ffunction-sections -Wl,--gc-sections \
 
 doom1_wad.c: DOOM1.WAD
-	echo -n "const " >> doom1_wad.c
-	xxd -i DOOM1.WAD >> doom1_wad.c
+
 
 doom1_wad.h: doom1_wad.c
-	echo "#pragma once" >> doom1_wad.h
-	echo -n "extern " >> doom1_wad.h
-	head -n 1 doom1_wad.c | sed 's/\].*$$//g' | tr '\n' ' ' >> doom1_wad.h
-	tail -n 1 doom1_wad.c | sed 's/^unsigned int DOOM1_WAD_len = \([0-9]*\);/\1/g' | tr '\n' ' ' >> doom1_wad.h
-	echo "];" >> doom1_wad.h
+
 
 
 $(OBJS): | $(OBJDIR) doom1_wad.h

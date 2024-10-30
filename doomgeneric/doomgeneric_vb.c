@@ -78,24 +78,6 @@ enum vb_btn_t {
   VB_BTN_RD,
 };
 
-
-static uint32_t popcnt( uint32_t x )
-{
-    x -= ((x >> 1) & 0x55555555);
-    x = (((x >> 2) & 0x33333333) + (x & 0x33333333));
-    x = (((x >> 4) + x) & 0x0f0f0f0f);
-    x += (x >> 8);
-    x += (x >> 16);
-    return x & 0x0000003f;
-}
-
-static uint32_t ctz( uint32_t x )
-{
-    return popcnt((x & -x) - 1);
-}
-
-
-
 uint16_t buttons_down;
 
 void DG_DrawFrame() {
@@ -202,8 +184,7 @@ int DG_GetKey(int *pressed, unsigned char *doomKey) {
   if (!diffs) {
     return 0;
   }
-  //const int tz = __builtin_ctz(diffs);
-  const int tz = ctz(diffs);
+  const int tz = __builtin_ctz(diffs);
 
   if ((buttons_down >> tz) & 1) {
     *pressed = 1;

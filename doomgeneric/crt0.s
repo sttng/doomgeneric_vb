@@ -78,7 +78,7 @@ __run_constructors:
   add 4, sp
 
   # Off we go!
-  jal main
+  jal _main
 __teardown:
   # Now run destructors in forward order
   # https://maskray.me/blog/2021-11-07-init-ctors-init-array
@@ -115,56 +115,56 @@ exit:
 
 .section ".interrupt_handlers", "ax"
   # Game Pad Interrupt
-  jr VbPlus_GamePadInterrupt
+  jr _VbPlus_GamePadInterrupt
   .fill 0xC
 
   # Timer interrupt
-  jr VbPlus_TimerInterrupt
+  jr _VbPlus_TimerInterrupt
   .fill 0xC
 
-  jr VbPlus_GamePakInterrupt
+  jr _VbPlus_GamePakInterrupt
   .fill 0xC
 
   # Communication Port Interrupt
-  jr VbPlus_ComInterrupt
+  jr _VbPlus_ComInterrupt
   .fill 0xC
 
   # VIP Interrupt
-  jr VbPlus_VipInterrupt
+  jr _VbPlus_VipInterrupt
   .fill 0xC
 
   # Unused
   .fill 0x110
 
   # Float Exception
-  jr VbPlus_FloatException
+  jr _VbPlus_FloatException
   .fill 0xC
  
   # Unused
   .fill 0x10
 
   # Divide by zero
-  jr VbPlus_DivideByZeroException
+  jr _VbPlus_DivideByZeroException
   .fill 0xC
 
   # Invalid Optcode
-  jr VbPlus_InvalidOpcodeException
+  jr _VbPlus_InvalidOpcodeException
   .fill 0xC
 
   # Trap 0
-  jr VbPlus_Trap0Exception
+  jr _VbPlus_Trap0Exception
   .fill 0xC
 
   # Trap 1
-  jr VbPlus_Trap1Exception
+  jr _VbPlus_Trap1Exception
   .fill 0xC
 
   # Breakpoint
-  jr VbPlus_AddrTrapException
+  jr _VbPlus_AddrTrapException
   .fill 0xC
 
   # Duplexed Exception
-  jr VbPlus_DuplexedException
+  jr _VbPlus_DuplexedException
   .fill 0xC
 
   # Unused
