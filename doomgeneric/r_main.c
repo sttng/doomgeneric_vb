@@ -42,7 +42,7 @@
 // Fineangles in the SCREENWIDTH wide window.
 #define FIELDOFVIEW		2048	
 
-
+static const fixed_t projectiony = ((SCREENHEIGHT * (SCREENWIDTH/2) * 384) / 224) / SCREENWIDTH * FRACUNIT;
 
 int			viewangleoffset;
 
@@ -195,28 +195,66 @@ R_PointOnSide
 }
 
 
-
-int R_PointOnSegSide(fixed_t x, fixed_t y, seg_t *line)
+int
+R_PointOnSegSide
+( fixed_t	x,
+  fixed_t	y,
+  seg_t*	line )
 {
-    const fixed_t lx = line->v1->x;
-    const fixed_t ly = line->v1->y;
-    const fixed_t ldx = line->v2->x - lx;
-    const fixed_t ldy = line->v2->y - ly;
-
+    fixed_t	lx;
+    fixed_t	ly;
+    fixed_t	ldx;
+    fixed_t	ldy;
+    fixed_t	dx;
+    fixed_t	dy;
+    fixed_t	left;
+    fixed_t	right;
+	
+    lx = line->v1->x;
+    ly = line->v1->y;
+	
+    ldx = line->v2->x - lx;
+    ldy = line->v2->y - ly;
+	
     if (!ldx)
-        return x <= lx ? ldy > 0 : ldy < 0;
-
+    {
+	if (x <= lx)
+	    return ldy > 0;
+	
+	return ldy < 0;
+    }
     if (!ldy)
-        return y <= ly ? ldx < 0 : ldx > 0;
-
-    x -= lx;
-    y -= ly;
-
+    {
+	if (y <= ly)
+	    return ldx < 0;
+	
+	return ldx > 0;
+    }
+	
+    dx = (x - lx);
+    dy = (y - ly);
+	
     // Try to quickly decide by looking at sign bits.
-    if ((ldy ^ ldx ^ x ^ y) < 0)
-        return (ldy ^ x) < 0;          // (left is negative)
+    if ( (ldy ^ ldx ^ dx ^ dy)&0x80000000 )
+    {
+	if  ( (ldy ^ dx) & 0x80000000 )
+	{
+	    // (left is negative)
+	    return 1;
+	}
+	return 0;
+    }
 
-    return FixedMul(y, ldx>>FRACBITS) >= FixedMul(ldy>>FRACBITS, x);
+    left = FixedMul ( ldy>>FRACBITS , dx );
+    right = FixedMul ( dy , ldx>>FRACBITS );
+	
+    if (right < left)
+    {
+	// front side
+	return 0;
+    }
+    // back side
+    return 1;			
 }
 
 
@@ -333,8 +371,6 @@ fixed_t R_PointToDist(fixed_t x, fixed_t y)
 }
 
 
-
-
 //
 // R_InitPointToAngle
 //
@@ -365,55 +401,19 @@ void R_InitPointToAngle (void)
 //  at the given angle.
 // rw_distance must be calculated first.
 //
-fixed_t R_ScaleFromGlobalAngle (angle_t visangle)
+
+fixed_t R_ScaleFromGlobalAngle(angle_t visangle)
 {
-    fixed_t		scale;
-    angle_t		anglea;
-    angle_t		angleb;
-    int			sinea;
-    int			sineb;
-    fixed_t		num;
-    int			den;
+  int     anglea = ANG90 + (visangle-viewangle);
+  int     angleb = ANG90 + (visangle-rw_normalangle);
 
-    // UNUSED
-#if 0
-{
-    fixed_t		dist;
-    fixed_t		z;
-    fixed_t		sinv;
-    fixed_t		cosv;
-	
-    sinv = finesine[(visangle-rw_normalangle)>>ANGLETOFINESHIFT];	
-    dist = FixedDiv (rw_distance, sinv);
-    cosv = finecosine[(viewangle-visangle)>>ANGLETOFINESHIFT];
-    z = abs(FixedMul (dist, cosv));
-    scale = FixedDiv(projection, z);
-    return scale;
-}
-#endif
+  int     den = FixedMul(rw_distance, finesine[anglea>>ANGLETOFINESHIFT]);
 
-    anglea = ANG90 + (visangle-viewangle);
-    angleb = ANG90 + (visangle-rw_normalangle);
+// proff 11/06/98: Changed for high-res
+  fixed_t num = FixedMul(projectiony, finesine[angleb>>ANGLETOFINESHIFT]);
 
-    // both sines are allways positive
-    sinea = finesine[anglea>>ANGLETOFINESHIFT];	
-    sineb = finesine[angleb>>ANGLETOFINESHIFT];
-    num = FixedMul(projection,sineb)<<detailshift;
-    den = FixedMul(rw_distance,sinea);
-
-    if (den > num>>16)
-    {
-	scale = FixedDiv (num, den);
-
-	if (scale > 64*FRACUNIT)
-	    scale = 64*FRACUNIT;
-	else if (scale < 256)
-	    scale = 256;
-    }
-    else
-	scale = 64*FRACUNIT;
-	
-    return scale;
+  return den > num>>16 ? (num = FixedDiv(num, den)) > 64*FRACUNIT ?
+    64*FRACUNIT : num < 256 ? 256 : num : 64*FRACUNIT;
 }
 
 
