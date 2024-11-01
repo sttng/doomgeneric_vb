@@ -102,11 +102,6 @@ $(OUTPUT).elf	:	$(OBJS)
 	$(LDFLAGS) \
 	-o $(OUTPUT).elf  -fdata-sections -ffunction-sections -Wl,--gc-sections \
 
-doom1_wad.c: DOOM1.WAD
-
-
-doom1_wad.h: doom1_wad.c
-
 
 
 $(OBJS): | $(OBJDIR) doom1_wad.h
