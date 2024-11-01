@@ -115,11 +115,8 @@ void R_DrawColumnVB (void)
     // Framebuffer destination address.
     // Use ylookup LUT to avoid multiply with ScreenWidth.
     // Use columnofs LUT for subwindows? 
-#ifdef VB_OVERDRIVE
-    int fb_strip_index = ((dc_x+32) * 28) + ((dc_yl+8) >> 3);
-#else
+
     int fb_strip_index = ((dc_x+32) << 5) + ((dc_yl+8) >> 3);
-#endif
     int strip_px_index = dc_yl & 7;
     uint16_t strip = vb_fb[fb_strip_index];
 

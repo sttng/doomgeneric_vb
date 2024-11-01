@@ -7,25 +7,6 @@
 #include "doomkeys.h"
 #include "i_video.h"
 
-#ifdef VB_OVERDRIVE
-#include <sys/time.h>
-#include <stdio.h>
-#include <fcntl.h>
-
-
-int vb_fd;
-struct timeval launch_tv;
-
-void DG_Init() {
-  vb_fd = open("/dev/virtualboy", O_SYNC | O_RDWR);
-  if (vb_fd < 0) {
-    fputs("Unable to open /dev/virtualboy\n", stderr);
-    abort();
-  }
-  gettimeofday(&launch_tv, NULL);
-}
-
-#else // !VB_OVERDRIVE
 volatile uint32_t vb_ms;
 
 // VB Hardware registers.
@@ -57,7 +38,6 @@ void DG_Init() {
   *scr = 0b10000100;
 }
 
-#endif // !VB_OVERDRIVE
 
 enum vb_btn_t {
   VB_BTN_PWR,
@@ -81,34 +61,13 @@ enum vb_btn_t {
 uint16_t buttons_down;
 
 void DG_DrawFrame() {
-#ifdef VB_OVERDRIVE
-  read(vb_fd, &buttons_down, sizeof(buttons_down));
-#else
   if (!(*scr & 0b10)) {
     // Copy current button state.
     buttons_down = *sdlr | (*sdhr << 8);
     // Initiate reading next button state.
     *scr = 0b10000100;
   }
-#endif
 }
-
-#ifdef VB_OVERDRIVE
-void DG_SleepMs(uint32_t ms) {
-  usleep(ms*1000);
-}
-
-static int64_t ms_of(const struct timeval* tv) {
-  return (((int64_t)tv->tv_sec) * 1000) + (tv->tv_usec / 1000);
-}
-
-uint32_t DG_GetTicksMs() {
-  struct timeval now;
-  gettimeofday(&now, NULL);
-  return ms_of(&now) - ms_of(&launch_tv);
-}
-
-#else  // !VB_OD
 
 void DG_SleepMs(uint32_t ms) {
   uint32_t target_ms = vb_ms + ms;
@@ -118,7 +77,6 @@ void DG_SleepMs(uint32_t ms) {
 }
 
 uint32_t DG_GetTicksMs() { return vb_ms; }
-#endif // !VB_OD
 
 unsigned char DoomKeyFor(enum vb_btn_t btn) {
   const char NO_OP = 'g';
@@ -209,17 +167,6 @@ int main() {
   };
   doomgeneric_Create(4, argv);
 
-#ifdef VB_OVERDRIVE
-  uint16_t both[(384 * 224 / 4)];
-  if (sizeof(both) != 43008) {
-    fprintf(stderr, "Unexpected size of frame buffer. Wanted %d, got %d", 43008, sizeof(both));
-    abort();
-  }
-  for (;;) {
-    doomgeneric_Tick(both, &both[384*224/8]);
-    write(vb_fd, both, sizeof(both));
-  }
-#else // !VB_OVERDRIVE
 #ifdef VB_DOUBLE_BUFFER
   uint16_t left[384 * 256 / 4];
   uint16_t right[384 * 256 / 4];
@@ -233,12 +180,10 @@ int main() {
     doomgeneric_Tick((uint16_t *)0, (uint16_t *)0x10000);
   }
 #endif // !VB_DOUBLE_BUFFER
-#endif // !VB_OVERDRIVE
 
   return 0;
 }
 
-#ifndef VB_OVERDRIVE
 
 int mkdir(const char *pathname, mode_t mode) {
   // Stub to make linker happy
@@ -315,4 +260,3 @@ void __attribute__((interrupt)) VbPlus_DuplexedException() {
   for (;;)
     ;
 }
-#endif // !VB_OVERDRIVE
