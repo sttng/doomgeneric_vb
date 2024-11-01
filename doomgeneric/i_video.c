@@ -76,17 +76,12 @@ int fb_scaling = 1;
 int usemouse = 0;
 
 
-#ifdef CMAP256
-
 boolean palette_changed;
-
-#else  // CMAP256
 
 struct color colors[256];
 
 byte luminance[256];
 
-#endif  // CMAP256
 
 
 void I_GetEvent(void);
@@ -304,23 +299,26 @@ void I_SetPalette (byte* palette)
     /* performance boost:
      * map to the right pixel format over here! */
 
-    for (i=0; i<256; ++i ) {
-        colors[i].a = 0;
-        int r = colors[i].r = gammatable[usegamma][*palette++];
-        int g = colors[i].g = gammatable[usegamma][*palette++];
-        int b = colors[i].b = gammatable[usegamma][*palette++];
+    if (palette_changed == false)
+    {
+
+        for (i=0; i<256; ++i ) {
+            colors[i].a = 0;
+            int r = colors[i].r = gammatable[usegamma][*palette++];
+            int g = colors[i].g = gammatable[usegamma][*palette++];
+            int b = colors[i].b = gammatable[usegamma][*palette++];
         
-        // Compute luminance for VB (fast approximation formula)
-        //const int final_val = (r + r + r + b + g + g + g + g) >> 3;
-        const int final_val = ((r<<1) + r + (g<<2) + b)>>3;
-        luminance[i] = final_val;
+            // Compute luminance for VB (fast approximation formula)
+            //const int final_val = (r + r + r + b + g + g + g + g) >> 3;
+            const int final_val = ((r << 1) + r + (g << 2) + b) >> 3;
+            luminance[i] = final_val;
+        }
+
+        palette_changed = true;
+
     }
 
-#ifdef CMAP256
 
-    palette_changed = true;
-
-#endif  // CMAP256
 }
 
 // Given an RGB value, find the closest matching palette index.
