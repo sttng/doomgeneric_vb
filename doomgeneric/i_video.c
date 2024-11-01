@@ -310,9 +310,9 @@ void I_SetPalette (byte* palette)
         int g = colors[i].g = gammatable[usegamma][*palette++];
         int b = colors[i].b = gammatable[usegamma][*palette++];
         
-        // Comput luminance for VB
-        const int sum = r + g + b;
-        const int final_val = (sum * 0x5555) >> 16;
+        // Compute luminance for VB (fast approximation formula)
+        //const int final_val = (r + r + r + b + g + g + g + g) >> 3;
+        const int final_val = ((r<<1) + r + (g<<2) + b)>>3;
         luminance[i] = final_val;
     }
 
